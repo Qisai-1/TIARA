@@ -27,6 +27,7 @@ build/
 .env
 venv/
 env/
+runs/
 
 # OS specific files
 .DS_Store
