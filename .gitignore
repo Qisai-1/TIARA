@@ -18,6 +18,7 @@ data/*.npy
 data/*.csv
 data/datasets/
 minari_datasets/ 
+logs/
 # Build and Distribution
 dist/
 build/
