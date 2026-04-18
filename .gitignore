@@ -17,7 +17,7 @@ data/*.h5
 data/*.npy
 data/*.csv
 data/datasets/
-
+minari_datasets/ 
 # Build and Distribution
 dist/
 build/

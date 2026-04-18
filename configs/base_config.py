@@ -49,7 +49,7 @@ class TabRLConfig:
 
     # ── CQL (offline conservatism) ───────────────────────────────────────────
     cql_alpha: float = 1.0         # conservatism weight; set 0 to disable
-    cql_n_random: int = 10         # random actions for CQL penalty
+    cql_n_random: int = 3          # random actions for CQL penalty
 
     # ── Replay Buffer ────────────────────────────────────────────────────────
     buffer_size: int = 1_000_000

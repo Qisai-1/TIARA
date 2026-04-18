@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --time=48:00:00                 # walltime limit (HH:MM:SS)
+#SBATCH --time=96:00:00                 # walltime limit (HH:MM:SS)
 #SBATCH --nodes=1                       # number of nodes
 #SBATCH --gres=gpu:h200:4              # 4x A100 80GB GPUs
 #SBATCH --cpus-per-task=4              # 4 cores per task = 16 cores total
@@ -19,14 +19,15 @@
 
 # LOAD MODULES, INSERT CODE, AND RUN YOUR PROGRAMS HERE
 
-cd ~/tabrl
-mkdir -p logs
+TIARA=/work/mech-ai-scratch/supersai/TIARA
+cd $TIARA
 
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate dqn
 
 
-export WANDB_PROJECT=tabrl
+source /work/mech-ai-scratch/supersai/TIARA/activate_tabrl.sh
+
 
 # Confirm GPUs are visible before training starts
 echo "GPUs available:"
@@ -42,12 +43,14 @@ torchrun \
     --context_len 64 \
     --n_candidates 16 \
     --pretrain_steps 300000 \
-    --batch_size 128 \
+    --batch_size 32 \
     --head_lr 1e-4 \
     --backbone_lr 1e-6 \
+    --cql_alpha 0.1 \
+    --cql_n_random 3 \
     --use_wandb \
     --seed 42 \
-    --save_dir runs/finetune_4gpu_h200
+    --save_dir $TIARA/runs/finetune_4gpu_h200
 
 echo "End time: $(date)"
 echo "Job complete."

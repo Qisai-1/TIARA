@@ -33,9 +33,9 @@ import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
-from tabrl.configs.base_config import TabRLConfig
-from tabrl.data.d4rl_loader import load_d4rl_dataset
-from tabrl.utils.normalizer import build_normalizers
+from TIARA.configs.base_config import TabRLConfig
+from TIARA.data.d4rl_loader import load_d4rl_dataset
+from TIARA.utils.normalizer import build_normalizers
 
 from baselines.bc.bc           import BCTrainer
 from baselines.td3bc.td3bc     import TD3BCTrainer

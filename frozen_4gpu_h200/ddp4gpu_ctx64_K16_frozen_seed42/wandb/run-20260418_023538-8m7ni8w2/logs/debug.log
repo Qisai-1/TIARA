@@ -1,0 +1,76 @@
+2026-04-18 02:35:38,321 INFO    MainThread:1077294 [wandb_setup.py:_flush():80] Current SDK version is 0.23.1
+2026-04-18 02:35:38,321 INFO    MainThread:1077294 [wandb_setup.py:_flush():80] Configure stats pid to 1077294
+2026-04-18 02:35:38,321 INFO    MainThread:1077294 [wandb_setup.py:_flush():80] Loading settings from /home/supersai/.config/wandb/settings
+2026-04-18 02:35:38,321 INFO    MainThread:1077294 [wandb_setup.py:_flush():80] Loading settings from /work/mech-ai-scratch/supersai/TIARA/wandb/settings
+2026-04-18 02:35:38,321 INFO    MainThread:1077294 [wandb_setup.py:_flush():80] Loading settings from environment variables
+2026-04-18 02:35:38,321 INFO    MainThread:1077294 [wandb_init.py:setup_run_log_directory():714] Logging user logs to /work/mech-ai-scratch/supersai/TIARA/frozen_4gpu_h200/ddp4gpu_ctx64_K16_frozen_seed42/wandb/run-20260418_023538-8m7ni8w2/logs/debug.log
+2026-04-18 02:35:38,322 INFO    MainThread:1077294 [wandb_init.py:setup_run_log_directory():715] Logging internal logs to /work/mech-ai-scratch/supersai/TIARA/frozen_4gpu_h200/ddp4gpu_ctx64_K16_frozen_seed42/wandb/run-20260418_023538-8m7ni8w2/logs/debug-internal.log
+2026-04-18 02:35:38,322 INFO    MainThread:1077294 [wandb_init.py:init():841] calling init triggers
+2026-04-18 02:35:38,322 INFO    MainThread:1077294 [wandb_init.py:init():846] wandb.init called with sweep_config: {}
+config: {'env_name': 'hopper-medium-v2', 'context_len': 64, 'context_sampling': 'recent', 'n_candidates': 16, 'proposal_type': 'gaussian', 'proposal_hidden_dim': 256, 'proposal_n_layers': 2, 'diversity_loss_weight': 0.1, 'shallow_value': False, 'value_hidden_dim': 256, 'value_n_layers': 2, 'use_ucb': True, 'beta_ucb': 0.1, 'backbone_model': 'v2', 'freeze_backbone': True, 'backbone_lr': 1e-05, 'phase': 'pretrain', 'pretrain_steps': 200000, 'online_steps': 50000, 'batch_size': 256, 'head_lr': 0.0003, 'gamma': 0.99, 'tau': 0.005, 'grad_clip': 1.0, 'cql_alpha': 1.0, 'cql_n_random': 10, 'buffer_size': 1000000, 'warmup_steps': 1000, 'log_every': 1000, 'eval_every': 5000, 'eval_episodes': 10, 'save_dir': '/work/mech-ai-scratch/supersai/TIARA/frozen_4gpu_h200', 'use_wandb': True, 'wandb_project': 'tabrl', 'seed': 42, 'device': 'cuda:0', '_wandb': {}}
+2026-04-18 02:35:38,322 INFO    MainThread:1077294 [wandb_init.py:init():889] starting backend
+2026-04-18 02:35:38,628 INFO    MainThread:1077294 [wandb_init.py:init():892] sending inform_init request
+2026-04-18 02:35:38,631 INFO    MainThread:1077294 [wandb_init.py:init():900] backend started and connected
+2026-04-18 02:35:38,650 INFO    MainThread:1077294 [wandb_init.py:init():970] updated telemetry
+2026-04-18 02:35:38,664 INFO    MainThread:1077294 [wandb_init.py:init():994] communicating run to backend with 90.0 second timeout
+2026-04-18 02:36:25,152 INFO    Thread-2 (wrapped_target):1077294 [retry.py:__call__():164] [no run ID] Retry attempt failed:
+Traceback (most recent call last):
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/http/client.py", line 1375, in getresponse
+    response.begin()
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/http/client.py", line 318, in begin
+    version, status, reason = self._read_status()
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/http/client.py", line 279, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/socket.py", line 717, in readinto
+    return self._sock.recv_into(b)
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/ssl.py", line 1307, in recv_into
+    return self.read(nbytes, buffer)
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/ssl.py", line 1163, in read
+    return self._sslobj.read(len, buffer)
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/urllib3/util/retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/urllib3/util/util.py", line 39, in reraise
+    raise value
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/urllib3/connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/urllib3/connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='api.wandb.ai', port=443): Read timed out. (read timeout=20)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/wandb/sdk/lib/retry.py", line 157, in __call__
+    result = self._call_fn(*args, **kwargs)
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/wandb/sdk/internal/internal_api.py", line 391, in execute
+    return self.client.execute(*args, **kwargs)  # type: ignore
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 52, in execute
+    result = self._get_result(document, *args, **kwargs)
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 60, in _get_result
+    return self.transport.execute(document, *args, **kwargs)
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/wandb/sdk/lib/gql_request.py", line 70, in execute
+    request = self.session.post(self.url, **post_args)
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/requests/sessions.py", line 637, in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/requests/adapters.py", line 690, in send
+    raise ReadTimeout(e, request=request)
+requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.wandb.ai', port=443): Read timed out. (read timeout=20)

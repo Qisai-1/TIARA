@@ -11,10 +11,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 import torch
 import numpy as np
-from tabrl.configs.base_config import TabRLConfig
-from tabrl.models.tabrl_agent import TabRLAgent
-from tabrl.data.replay_buffer import ReplayBuffer
-from tabrl.data.d4rl_loader import ICLTransitionDataset
+from TIARA.configs.base_config import TabRLConfig
+from TIARA.models.tabrl_agent import TabRLAgent
+from TIARA.data.replay_buffer import ReplayBuffer
+from TIARA.data.d4rl_loader import ICLTransitionDataset
 
 
 def test_agent_forward():

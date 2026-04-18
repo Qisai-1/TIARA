@@ -45,8 +45,8 @@ if _parent not in sys.path:
 if _here not in sys.path:
     sys.path.insert(0, _here)
 
-from tabrl.configs.base_config import TabRLConfig
-from tabrl.data.d4rl_loader import (
+from TIARA.configs.base_config import TabRLConfig
+from TIARA.data.d4rl_loader import (
     build_multi_env_dataloader,
     ALL_PRETRAIN_ENVS,
     MultiEnvDataset,
@@ -54,9 +54,9 @@ from tabrl.data.d4rl_loader import (
     EnvNormalizer,
     load_d4rl_dataset,
 )
-from tabrl.models.tabrl_agent import TabRLAgent
-from tabrl.utils.logger import Logger
-from tabrl.utils.normalizer import build_normalizers
+from TIARA.models.tabrl_agent import TabRLAgent
+from TIARA.utils.logger import Logger
+from TIARA.utils.normalizer import build_normalizers
 
 
 # ── DDP helpers ───────────────────────────────────────────────────────────────
@@ -91,6 +91,8 @@ def parse_args():
     parser.add_argument("--proposal_type",  type=str, default=config.proposal_type)
     parser.add_argument("--shallow_value",  action="store_true")
     parser.add_argument("--cql_alpha",      type=float, default=config.cql_alpha)
+    parser.add_argument("--cql_n_random",   type=int,   default=config.cql_n_random,
+                        help="Number of random actions for CQL penalty (default 3, set 0 to disable)")
     parser.add_argument("--freeze_backbone",    action="store_true", default=True)
     parser.add_argument("--no_freeze_backbone", dest="freeze_backbone",
                         action="store_false")
@@ -110,6 +112,7 @@ def parse_args():
     config.proposal_type   = args.proposal_type
     config.shallow_value   = args.shallow_value
     config.cql_alpha       = args.cql_alpha
+    config.cql_n_random    = args.cql_n_random
     config.freeze_backbone = args.freeze_backbone
     config.backbone_lr     = args.backbone_lr
     config.pretrain_steps  = args.pretrain_steps
@@ -137,7 +140,7 @@ def build_ddp_dataloader(
 
     Effective batch size = config.batch_size × world_size
     """
-    from tabrl.data.d4rl_loader import (
+    from TIARA.data.d4rl_loader import (
         load_d4rl_dataset, EnvNormalizer, ICLEnvDataset, MultiEnvDataset
     )
 

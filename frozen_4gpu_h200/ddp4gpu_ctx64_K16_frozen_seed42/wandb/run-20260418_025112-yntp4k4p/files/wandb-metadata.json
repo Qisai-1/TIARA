@@ -1,0 +1,121 @@
+{
+  "os":  "Linux-5.14.0-570.76.1.el9_6.x86_64-x86_64-with-glibc2.34",
+  "python":  "CPython 3.10.19",
+  "startedAt":  "2026-04-18T07:51:12.582360Z",
+  "args":  [
+    "--phase",
+    "pretrain",
+    "--freeze_backbone",
+    "--context_len",
+    "64",
+    "--n_candidates",
+    "16",
+    "--pretrain_steps",
+    "200000",
+    "--batch_size",
+    "256",
+    "--head_lr",
+    "3e-4",
+    "--use_wandb",
+    "--seed",
+    "42",
+    "--save_dir",
+    "/work/mech-ai-scratch/supersai/TIARA/frozen_4gpu_h200"
+  ],
+  "program":  "/work/mech-ai-scratch/supersai/TIARA/train_ddp.py",
+  "codePath":  "train_ddp.py",
+  "codePathLocal":  "train_ddp.py",
+  "git":  {
+    "remote":  "git@github.com:Qisai-1/TIARA.git",
+    "commit":  "255313c2ae11da9aaf581e724d957118084e468a"
+  },
+  "root":  "/work/mech-ai-scratch/supersai/TIARA/frozen_4gpu_h200/ddp4gpu_ctx64_K16_frozen_seed42",
+  "host":  "nova21-gpu-2",
+  "executable":  "/work/mech-ai-scratch/supersai/.conda/envs/dqn/bin/python",
+  "cpu_count":  64,
+  "cpu_count_logical":  128,
+  "gpu":  "NVIDIA A100-SXM4-80GB",
+  "gpu_count":  4,
+  "disk":  {
+    "/":  {
+      "total":  "270332760064",
+      "used":  "8913301504"
+    }
+  },
+  "memory":  {
+    "total":  "540665524224"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA A100-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere",
+      "uuid":  "GPU-d2a31a2e-c209-5207-305f-e58a35bb30b9"
+    },
+    {
+      "name":  "NVIDIA A100-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere",
+      "uuid":  "GPU-b1c178f8-2cb8-e5b5-8c48-752564e1db1e"
+    },
+    {
+      "name":  "NVIDIA A100-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere",
+      "uuid":  "GPU-d5c86fdc-5a2a-3642-bfee-cd9ef708d3ff"
+    },
+    {
+      "name":  "NVIDIA A100-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere",
+      "uuid":  "GPU-e97e7008-d3b2-0060-c11b-56eff7d2dbe3"
+    }
+  ],
+  "cudaVersion":  "13.0",
+  "slurm":  {
+    "cluster_name":  "nova",
+    "conf":  "/var/spool/slurmd/conf-cache/slurm.conf",
+    "cpus_on_node":  "16",
+    "cpus_per_task":  "4",
+    "gpus_on_node":  "4",
+    "gtids":  "0",
+    "job_account":  "mech-ai",
+    "job_cpus_per_node":  "16",
+    "job_end_time":  "1776671429",
+    "job_gid":  "101",
+    "job_gpus":  "0,1,2,3",
+    "job_id":  "10449957",
+    "job_name":  "tabrl_frozen",
+    "job_nodelist":  "nova21-gpu-2",
+    "job_num_nodes":  "1",
+    "job_partition":  "nova",
+    "job_qos":  "normal",
+    "job_start_time":  "1776498629",
+    "job_uid":  "400181",
+    "job_user":  "supersai",
+    "jobid":  "10449957",
+    "localid":  "0",
+    "mem_per_node":  "184320",
+    "nnodes":  "1",
+    "nodeid":  "0",
+    "nodelist":  "nova21-gpu-2",
+    "nprocs":  "4",
+    "ntasks":  "4",
+    "oom_kill_step":  "0",
+    "prio_process":  "0",
+    "procid":  "0",
+    "script_context":  "prolog_task",
+    "submit_dir":  "/work/mech-ai-scratch/supersai/TIARA",
+    "submit_host":  "nova-vscode.its.iastate.edu",
+    "task_pid":  "1077972",
+    "tasks_per_node":  "4",
+    "topology_addr":  "nova21-gpu-2",
+    "topology_addr_pattern":  "node",
+    "tres_per_task":  "cpu=4"
+  },
+  "writerId":  "u7dn9hli13b10ehe13bk1p5k4zxjx6z9"
+}

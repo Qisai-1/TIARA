@@ -9,7 +9,7 @@ Usage:
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
-from tabrl.data.d4rl_loader import ALL_PRETRAIN_ENVS
+from TIARA.data.d4rl_loader import ALL_PRETRAIN_ENVS
 
 def download_all():
     try:

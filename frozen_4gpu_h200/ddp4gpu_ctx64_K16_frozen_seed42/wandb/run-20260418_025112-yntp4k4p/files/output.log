@@ -1,0 +1,9 @@
+[Logger] W&B run: ddp4gpu_ctx64_K16_frozen_seed42  url: https://wandb.ai/supersai/tabrl/runs/yntp4k4p
+
+============================================================
+  DDP Pretraining: 200,000 steps
+  GPUs: 4  Local rank: 0
+  Save dir: /work/mech-ai-scratch/supersai/TIARA/frozen_4gpu_h200/ddp4gpu_ctx64_K16_frozen_seed42
+============================================================
+/work/mech-ai-scratch/supersai/.conda/envs/dqn/lib/python3.10/site-packages/torch/distributed/distributed_c10d.py:4631: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user.
+  warnings.warn(  # warn only once
