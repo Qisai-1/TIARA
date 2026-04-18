@@ -1,0 +1,18 @@
+
+# Core
+torch>=2.1.0
+numpy>=1.24.0
+
+# TabPFN backbone
+tabpfn>=2.0.0
+
+# D4RL data
+minari>=0.4.1
+gymnasium>=0.29.0
+gymnasium[mujoco]
+
+# Logging
+wandb>=0.16.0
+
+# Utils
+tqdm>=4.66.0
