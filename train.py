@@ -25,7 +25,7 @@ import numpy as np
 import torch
 
 # Insert the PARENT of the tabrl directory so that
-# import TIARA.xxx works regardless of where you run from
+# import tabrl.xxx works regardless of where you run from
 _here   = os.path.dirname(os.path.abspath(__file__))
 _parent = os.path.dirname(_here)
 if _parent not in sys.path:
@@ -33,17 +33,26 @@ if _parent not in sys.path:
 if _here not in sys.path:
     sys.path.insert(0, _here)
 
-from TIARA.configs.base_config import TabRLConfig
-from TIARA.data.d4rl_loader import (
-    build_multi_env_dataloader,
-    ALL_PRETRAIN_ENVS,
-    load_d4rl_dataset,
-    make_pretrain_dataloader,
-)
-from TIARA.models.tabrl_agent import TabRLAgent
-from TIARA.training.pretrain import pretrain
-from TIARA.utils.normalizer import build_normalizers
-from TIARA.utils.logger import Logger
+# Dynamic import — works whether package is named "tabrl" or "TIARA"
+import importlib
+_pkg   = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
+
+_cfg   = importlib.import_module(f"{_pkg}.configs.base_config")
+_data  = importlib.import_module(f"{_pkg}.data.d4rl_loader")
+_agent = importlib.import_module(f"{_pkg}.models.tabrl_agent")
+_train = importlib.import_module(f"{_pkg}.training.pretrain")
+_norm  = importlib.import_module(f"{_pkg}.utils.normalizer")
+_log   = importlib.import_module(f"{_pkg}.utils.logger")
+
+TabRLConfig                = _cfg.TabRLConfig
+build_multi_env_dataloader = _data.build_multi_env_dataloader
+ALL_PRETRAIN_ENVS          = _data.ALL_PRETRAIN_ENVS
+load_d4rl_dataset          = _data.load_d4rl_dataset
+make_pretrain_dataloader   = _data.make_pretrain_dataloader
+TabRLAgent                 = _agent.TabRLAgent
+pretrain                   = _train.pretrain
+build_normalizers          = _norm.build_normalizers
+Logger                     = _log.Logger
 
 
 def parse_args():
@@ -217,7 +226,7 @@ def main():
             normalizers_dict = build_normalizers(data)
 
             # Normalize
-            from TIARA.utils.normalizer import RunningNormalizer
+            RunningNormalizer = importlib.import_module(f"{_pkg}.utils.normalizer").RunningNormalizer
             obs_norm = normalizers_dict["obs"]
             act_norm = normalizers_dict["act"]
             rew_norm = normalizers_dict["rew"]
@@ -264,45 +273,50 @@ def main():
             raise FileNotFoundError(f"Checkpoint not found: {args.checkpoint}")
 
         eval_env_name = args.eval_env
-        minari_id     = config.D4RL_TO_MINARI.get(eval_env_name)
-        if minari_id is None:
-            raise ValueError(f"Unknown eval env: {eval_env_name}")
-
         print(f"[Main] Evaluating on: {eval_env_name}")
 
-        # Load eval environment data to get dims and normalizer
-        data = load_d4rl_dataset(minari_id)
-        obs_dim = data["observations"].shape[1]
-        act_dim = data["actions"].shape[1]
+        # Use padded dims from multi-env pretraining (no dataset download needed)
+        # max_obs_dim=17 (halfcheetah/walker2d), max_act_dim=6
+        max_obs_dim = 17
+        max_act_dim = 6
+        print(f"[Main] Using padded dims: obs={max_obs_dim}  act={max_act_dim}")
 
-        from TIARA.data.d4rl_loader import EnvNormalizer
-        norm = EnvNormalizer(data)
-
-        # Build agent with eval env dims
-        # Note: if pretrained with multi-env (padded dims), load with padded dims
-        # For simplicity here we use eval env dims directly
-        agent = TabRLAgent(config, obs_dim=obs_dim, act_dim=act_dim)
+        agent = TabRLAgent(config, obs_dim=max_obs_dim, act_dim=max_act_dim)
         agent.load(args.checkpoint)
         print(f"[Main] Loaded checkpoint: {args.checkpoint}")
+
+        # Load normalizer from local cached dataset (MINARI_DATASETS_PATH)
+        minari_id = config.D4RL_TO_MINARI.get(eval_env_name)
+        if minari_id is None:
+            raise ValueError(f"Unknown eval env: {eval_env_name}")
+        print(f"[Main] Loading normalizer from local cache ...")
+        data        = load_d4rl_dataset(minari_id)
+        normalizers = build_normalizers(data)
 
         # Create gymnasium environment
         try:
             import gymnasium as gym
-            env_id = eval_env_name.replace("-v2", "-v4")
-            env = gym.make(env_id)
+            _gym_map = {
+                "hopper-medium-v2":             "Hopper-v4",
+                "hopper-medium-expert-v2":      "Hopper-v4",
+                "hopper-medium-replay-v2":      "Hopper-v4",
+                "halfcheetah-medium-v2":        "HalfCheetah-v4",
+                "halfcheetah-medium-expert-v2": "HalfCheetah-v4",
+                "halfcheetah-medium-replay-v2": "HalfCheetah-v4",
+                "walker2d-medium-v2":           "Walker2d-v4",
+                "walker2d-medium-expert-v2":    "Walker2d-v4",
+                "walker2d-medium-replay-v2":    "Walker2d-v4",
+            }
+            env_id = _gym_map.get(eval_env_name, eval_env_name)
+            env    = gym.make(env_id)
         except Exception as e:
             raise RuntimeError(
-                f"Could not create gymnasium env '{eval_env_name}': {e}\n"
+                f"Could not create env '{eval_env_name}': {e}\n"
                 f"Install: pip install gymnasium[mujoco]"
             )
 
-        from TIARA.evaluation.evaluator import evaluate_policy
-        from TIARA.utils.normalizer import RunningNormalizer
-        normalizers = build_normalizers(data)
-
-        score = evaluate_policy(
-            agent, env, normalizers, config, n_episodes=10
-        )
+        evaluate_policy = importlib.import_module(f"{_pkg}.evaluation.evaluator").evaluate_policy
+        score = evaluate_policy(agent, env, normalizers, config, n_episodes=10)
         print(f"\n[Main] Normalized score on {eval_env_name}: {score:.2f}")
         env.close()
 

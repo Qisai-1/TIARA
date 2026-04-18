@@ -36,4 +36,26 @@ runs/
 .vscode/
 
 # Slurm/Cluster logs
-slurm-*.out
+slurm-*.out# Checkpoints — too large for git
+runs/
+frozen_4gpu_h200/
+finetune_4gpu_h200/
+*.pt
+*.pth
+
+# W&B run files
+wandb/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Minari datasets
+minari_datasets/
+
+# Logs
+logs/
+*.out
+*.err

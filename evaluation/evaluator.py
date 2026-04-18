@@ -50,6 +50,13 @@ def evaluate_policy(
                     pad = L - len(hist_obs)
                     hist_obs = np.concatenate([np.zeros((pad, agent.obs_dim), dtype=np.float32), hist_obs])
                     hist_act = np.concatenate([np.zeros((pad, agent.act_dim), dtype=np.float32), hist_act])
+                # Pad obs and act dims to agent.obs_dim / agent.act_dim
+                if hist_obs.shape[1] < agent.obs_dim:
+                    pad_obs = np.zeros((hist_obs.shape[0], agent.obs_dim - hist_obs.shape[1]), dtype=np.float32)
+                    hist_obs = np.concatenate([hist_obs, pad_obs], axis=-1)
+                if hist_act.shape[1] < agent.act_dim:
+                    pad_act = np.zeros((hist_act.shape[0], agent.act_dim - hist_act.shape[1]), dtype=np.float32)
+                    hist_act = np.concatenate([hist_act, pad_act], axis=-1)
                     hist_rew = np.concatenate([np.zeros(pad, dtype=np.float32), hist_rew])
 
                 ctx_X_np = np.concatenate([hist_obs, hist_act], axis=-1)   # (L, obs+act)
@@ -59,19 +66,31 @@ def evaluate_policy(
                 ctx_X = torch.zeros(1, L, agent.feature_dim, device=agent.device)
                 ctx_y = torch.zeros(1, L, device=agent.device)
 
-            obs_t = torch.from_numpy(obs_norm).unsqueeze(0).to(agent.device)
+            # Pad obs to max_obs_dim (agent.obs_dim) for multi-env compatibility
+            # e.g. hopper obs=11 padded to 17 with zeros
+            obs_padded = np.zeros(agent.obs_dim, dtype=np.float32)
+            obs_padded[:len(obs_norm)] = obs_norm
+            obs_t = torch.from_numpy(obs_padded).unsqueeze(0).to(agent.device)
 
             with torch.no_grad():
                 action, _ = agent.select_action(ctx_X, ctx_y, obs_t, deterministic=True)
 
-            next_obs, reward, terminated, truncated, info = env.step(action)
+            # Slice action to actual env dim (agent outputs padded dim=6)
+            env_act_dim = env.action_space.shape[0]
+            action_env  = action[:env_act_dim]
+
+            next_obs, reward, terminated, truncated, info = env.step(action_env)
             done = terminated or truncated
 
-            # Record normalized transition for context
-            act_norm = normalizers["act"].normalize(action.astype(np.float32))
+            # Record normalized transition — pad obs/act to agent dims before storing
+            act_norm = normalizers["act"].normalize(action_env.astype(np.float32))
             rew_norm = float(normalizers["rew"].normalize(np.array([[reward]]))[0, 0])
-            ctx_obs_list.append(obs_norm)
-            ctx_act_list.append(act_norm)
+            obs_store = np.zeros(agent.obs_dim, dtype=np.float32)
+            obs_store[:len(obs_norm)] = obs_norm
+            act_store = np.zeros(agent.act_dim, dtype=np.float32)
+            act_store[:len(act_norm)] = act_norm
+            ctx_obs_list.append(obs_store)
+            ctx_act_list.append(act_store)
             ctx_rew_list.append(rew_norm)
 
             episode_reward += reward

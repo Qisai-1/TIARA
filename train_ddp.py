@@ -37,26 +37,36 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, DistributedSampler
 
-# Fix import path — works from inside tabrl/ directory
+# Fix import path — works regardless of package name (tabrl or TIARA)
+# _here = directory containing this script (the package root)
+# _parent = parent of the package (what we add to sys.path)
 _here   = os.path.dirname(os.path.abspath(__file__))
 _parent = os.path.dirname(_here)
+_pkg    = os.path.basename(_here)   # "tabrl" or "TIARA" or whatever it is named
+
 if _parent not in sys.path:
     sys.path.insert(0, _parent)
 if _here not in sys.path:
     sys.path.insert(0, _here)
 
-from TIARA.configs.base_config import TabRLConfig
-from TIARA.data.d4rl_loader import (
-    build_multi_env_dataloader,
-    ALL_PRETRAIN_ENVS,
-    MultiEnvDataset,
-    ICLEnvDataset,
-    EnvNormalizer,
-    load_d4rl_dataset,
-)
-from TIARA.models.tabrl_agent import TabRLAgent
-from TIARA.utils.logger import Logger
-from TIARA.utils.normalizer import build_normalizers
+# Import using the actual package name (works for both tabrl and TIARA)
+import importlib
+_cfg   = importlib.import_module(f"{_pkg}.configs.base_config")
+_data  = importlib.import_module(f"{_pkg}.data.d4rl_loader")
+_agent = importlib.import_module(f"{_pkg}.models.tabrl_agent")
+_log   = importlib.import_module(f"{_pkg}.utils.logger")
+_norm  = importlib.import_module(f"{_pkg}.utils.normalizer")
+
+TabRLConfig             = _cfg.TabRLConfig
+build_multi_env_dataloader = _data.build_multi_env_dataloader
+ALL_PRETRAIN_ENVS       = _data.ALL_PRETRAIN_ENVS
+MultiEnvDataset         = _data.MultiEnvDataset
+ICLEnvDataset           = _data.ICLEnvDataset
+EnvNormalizer           = _data.EnvNormalizer
+load_d4rl_dataset       = _data.load_d4rl_dataset
+TabRLAgent              = _agent.TabRLAgent
+Logger                  = _log.Logger
+build_normalizers       = _norm.build_normalizers
 
 
 # ── DDP helpers ───────────────────────────────────────────────────────────────
@@ -140,10 +150,6 @@ def build_ddp_dataloader(
 
     Effective batch size = config.batch_size × world_size
     """
-    from TIARA.data.d4rl_loader import (
-        load_d4rl_dataset, EnvNormalizer, ICLEnvDataset, MultiEnvDataset
-    )
-
     if rank == 0:
         print(f"\n[DDP] Building dataset on rank 0 ...")
 
