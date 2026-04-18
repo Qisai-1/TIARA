@@ -1,0 +1,37 @@
+# Python bytecode and cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Training logs and model checkpoints
+# Your 'runs/' folder contains experiment data which is usually very large
+runs/
+
+# Dataset files
+# If 'scripts/download_data.py' downloads files into a data/ directory, ignore the raw data
+# but keep the python loaders
+data/*.pkl
+data/*.h5
+data/*.npy
+data/*.csv
+data/datasets/
+
+# Build and Distribution
+dist/
+build/
+*.egg-info/
+
+# Environments
+.env
+venv/
+env/
+
+# OS specific files
+.DS_Store
+.idea/
+.vscode/
+
+# Slurm/Cluster logs
+slurm-*.out
