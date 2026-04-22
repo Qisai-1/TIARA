@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --time=48:00:00                 # walltime limit (HH:MM:SS)
+#SBATCH --time=72:00:00                 # walltime limit (HH:MM:SS)
 #SBATCH --nodes=1                       # number of nodes
 #SBATCH --gres=gpu:a100:4              # 4x A100 80GB GPUs
 #SBATCH --cpus-per-task=4              # 4 cores per task = 16 cores total
@@ -52,9 +52,9 @@ torchrun \
     train_ddp.py \
     --phase pretrain \
     --freeze_backbone \
-    --context_len 64 \
+    --context_len 32 \
     --n_candidates 4 \
-    --pretrain_steps 200000 \
+    --pretrain_steps 100000 \
     --batch_size 256 \
     --head_lr 3e-4 \
     --cql_alpha 1.0 \
