@@ -412,7 +412,7 @@ class ICLTransitionDataset(Dataset):
         X   = np.concatenate([self.obs[ctx], self.acts[ctx]], -1).astype(np.float32)
         return {
             "context_X": torch.from_numpy(X),
-            "context_y": torch.from_numpy(self.rews[ctx].astype(np.float32)),
+            "context_y": torch.from_numpy(self.rtg[ctx].astype(np.float32)),   # RTG not raw reward
             "query_obs": torch.from_numpy(self.obs[q].astype(np.float32)),
             "query_act": torch.from_numpy(self.acts[q].astype(np.float32)),
             "query_rew": torch.tensor(float(self.rews[q]), dtype=torch.float32),

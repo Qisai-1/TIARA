@@ -269,7 +269,11 @@ class TabRLAgent(nn.Module):
                 )
 
             V_next   = Q_next.max(dim=1).values                    # (B,)
+            # Clip V_next to prevent target explosion
+            V_next    = torch.clamp(V_next, -200.0, 200.0)
             td_target = rewards + self.config.gamma * (1 - terminals) * V_next
+            # Clip TD target itself
+            td_target = torch.clamp(td_target, -200.0, 200.0)
 
         # ── Q̂(sₜ, aₜ) for dataset action ────────────────────────────────────
         # Wrap dataset action as a single "candidate"

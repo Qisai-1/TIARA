@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --time=96:00:00                 # walltime limit (HH:MM:SS)
 #SBATCH --nodes=1                       # number of nodes
-#SBATCH --gres=gpu:h200:4              # 4x A100 80GB GPUs
+#SBATCH --gres=gpu:a100:4              # 4x A100 80GB GPUs
 #SBATCH --cpus-per-task=4              # 4 cores per task = 16 cores total
 #SBATCH --ntasks=4                      # 1 task per GPU, 4 GPUs total
 #SBATCH --mem=180G                      # maximum memory per node

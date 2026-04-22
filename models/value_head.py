@@ -64,7 +64,7 @@ class ValueHead(nn.Module):
         Returns: (B, K)           — Q-values for each candidate
         """
         B, K, D = h.shape
-        q = self.net(h.view(B * K, D))   # (B*K, 1)
+        q = self.net(h.reshape(B * K, D))   # (B*K, 1)
         return q.view(B, K)              # (B, K)
 
 
@@ -87,7 +87,7 @@ class ShallowValueHead(nn.Module):
         B, K, A = candidates.shape
         h_exp = h1.unsqueeze(1).expand(B, K, -1)            # (B, K, hidden)
         inp   = torch.cat([h_exp, candidates], dim=-1)       # (B, K, hidden+act)
-        q     = self.net(inp.view(B * K, -1))                # (B*K, 1)
+        q     = self.net(inp.reshape(B * K, -1))                # (B*K, 1)
         return q.view(B, K)                                  # (B, K)
 
 

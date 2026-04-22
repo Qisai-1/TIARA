@@ -113,6 +113,10 @@ def parse_args():
     parser.add_argument("--save_dir",       type=str,   default="runs")
     parser.add_argument("--use_wandb",      action="store_true")
     parser.add_argument("--seed",           type=int,   default=42)
+    parser.add_argument("--resume",         type=str,   default=None,
+                        help="Path to checkpoint to resume from")
+    parser.add_argument("--resume_step",    type=int,   default=0,
+                        help="Step to resume from")
 
     args = parser.parse_args()
 
@@ -131,6 +135,8 @@ def parse_args():
     config.save_dir        = args.save_dir
     config.use_wandb       = args.use_wandb
     config.seed            = args.seed
+    config.resume          = args.resume
+    config.resume_step     = args.resume_step
     config.device          = "cuda"
 
     return config, args
@@ -267,9 +273,15 @@ def train_ddp(config, args):
             {"params": head_params,     "lr": config.head_lr},
         ], weight_decay=1e-4)
 
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=config.pretrain_steps, eta_min=1e-6
-    )
+    # Linear warmup then cosine decay
+    warmup_steps = getattr(config, 'warmup_steps', 2000)
+    import math as _math
+    def lr_lambda(step):
+        if step < warmup_steps:
+            return float(step) / max(1, warmup_steps)
+        progress = float(step - warmup_steps) / max(1, config.pretrain_steps - warmup_steps)
+        return max(0.01, 0.5 * (1.0 + _math.cos(_math.pi * progress)))
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
     # ── Logger (rank 0 only) ──────────────────────────────────────────────────
     save_dir = os.path.join(
@@ -297,6 +309,17 @@ def train_ddp(config, args):
     t0        = time.time()
     running   = {}
 
+    # Resume from checkpoint if specified
+    start_step = 1
+    if hasattr(config, 'resume') and config.resume and os.path.exists(config.resume):
+        if main:
+            print(f"[DDP] Resuming from: {config.resume}")
+        map_loc = f"cuda:{local_rank}"
+        raw_agent.load(config.resume)
+        start_step = getattr(config, 'resume_step', 0) + 1
+        if main:
+            print(f"[DDP] Resuming from step {start_step}")
+
     if main:
         print(f"\n{'='*60}")
         print(f"  DDP Pretraining: {config.pretrain_steps:,} steps")
@@ -304,7 +327,7 @@ def train_ddp(config, args):
         print(f"  Save dir: {save_dir}")
         print(f"{'='*60}\n")
 
-    for step in range(1, config.pretrain_steps + 1):
+    for step in range(start_step, config.pretrain_steps + 1):
 
         # Shuffle sampler at each epoch boundary
         if step % len(dataloader) == 1:
@@ -328,12 +351,27 @@ def train_ddp(config, args):
         # Use raw_agent for bc_step/td_step (DDP wraps forward only)
         bc_loss, bc_info = raw_agent.bc_step(batch)
         td_loss, td_info = raw_agent.td_step(batch)
-        total_loss       = bc_loss + td_loss
+        td_w             = getattr(config, 'td_weight', 0.01)
+        if step < 5000:
+            total_loss = bc_loss
+        else:
+            total_loss = bc_loss + td_w * td_loss
 
         total_loss.backward()
-        grad_norm = torch.nn.utils.clip_grad_norm_(
-            ddp_agent.parameters(), config.grad_clip
-        ).item()
+        # Clip backbone and heads separately
+        if config.freeze_backbone:
+            grad_norm = torch.nn.utils.clip_grad_norm_(
+                ddp_agent.parameters(), config.grad_clip
+            ).item()
+        else:
+            # More aggressive clipping for backbone
+            torch.nn.utils.clip_grad_norm_(
+                raw_agent.backbone.parameters(), 0.1
+            )
+            grad_norm = torch.nn.utils.clip_grad_norm_(
+                list(raw_agent.proposal_head.parameters()) +
+                list(raw_agent.value_head.parameters()), config.grad_clip
+            ).item()
         optimizer.step()
         scheduler.step()
         raw_agent.soft_update_target()
@@ -377,7 +415,7 @@ def train_ddp(config, args):
 
             logger.log(metrics, step=step)
             print(
-                f"[{step:>7d}/{config.pretrain_steps}] "
+                f"{time.strftime('%H:%M:%S')}  [{step:>7d}/{config.pretrain_steps}] "
                 f"loss={total_loss.item():.4f}  "
                 f"bc={bc_loss.item():.4f}  "
                 f"td={td_info['value/td_loss']:.4f}  "

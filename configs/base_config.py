@@ -44,7 +44,9 @@ class TabRLConfig:
     batch_size: int = 256          # number of (context, query) pairs per batch
     head_lr: float = 3e-4
     gamma: float = 0.99
-    tau: float = 0.005             # soft target network update
+    tau: float = 0.001             # soft target network update (slower = more stable)
+    td_weight: float = 0.01        # scale TD loss relative to BC loss
+    warmup_steps: int = 2000       # linear LR warmup steps
     grad_clip: float = 1.0
 
     # ── CQL (offline conservatism) ───────────────────────────────────────────
@@ -53,7 +55,6 @@ class TabRLConfig:
 
     # ── Replay Buffer ────────────────────────────────────────────────────────
     buffer_size: int = 1_000_000
-    warmup_steps: int = 1000       # collect this many steps before TD updates
 
     # ── Logging / Checkpointing ──────────────────────────────────────────────
     log_every: int = 1000
