@@ -59,3 +59,20 @@ minari_datasets/
 logs/
 *.out
 *.err
+
+# W&B
+wandb/
+**/wandb/
+debug.log
+debug-internal.log
+latest-run
+
+# Checkpoints
+**/*.pt
+**/*.pth
+**/metrics.csv
+
+# Run directories
+frozen_4gpu_h200/
+finetune_4gpu_h200/
+runs/
