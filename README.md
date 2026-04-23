@@ -130,7 +130,7 @@ conda activate dqn
 # Download datasets to TIARA storage
 python scripts/download_data.py
 
-# Stage 1 — frozen backbone (submit first, ~48hrs on 4x H200)
+# Stage 1 — frozen backbone 
 sbatch scripts/pretrain_frozen.sbatch
 
 # Stage 2 — full fine-tuning (submit after Stage 1 completes)
