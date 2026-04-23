@@ -120,7 +120,7 @@ PYTHONPATH=.. python train.py --phase eval \
     --eval_env hopper-medium-v2
 ```
 
-## Cluster Training (Iowa State Nova)
+## Cluster Training
 
 ```bash
 # Setup environment
