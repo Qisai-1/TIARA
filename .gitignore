@@ -76,3 +76,6 @@ latest-run
 frozen_4gpu_h200/
 finetune_4gpu_h200/
 runs/
+__pycache__/
+**/__pycache__/
+*.pyc
