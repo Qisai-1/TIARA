@@ -275,31 +275,35 @@ class TabRLAgent(nn.Module):
             # Clip TD target itself
             td_target = torch.clamp(td_target, -200.0, 200.0)
 
-        # ── Q̂(sₜ, aₜ) for dataset action ────────────────────────────────────
-        # Wrap dataset action as a single "candidate"
+        # ── Q̂(sₜ, aₜ) for dataset action + CQL random penalty ──────────────────
+        # Merge dataset action and random actions into a single backbone call
+        # to avoid running the backbone twice with the same context.
         query_act_expanded = query_act.unsqueeze(1)                 # (B, 1, act)
 
-        if self.config.shallow_value:
-            _, _, _, h1 = self.propose(context_X, context_y, query_obs)
-            Q_dataset   = self.evaluate_shallow(h1, query_act_expanded)[:, 0]
-        else:
-            Q_dataset = self.evaluate(
-                context_X, context_y, query_obs, query_act_expanded
-            )[:, 0]                                                  # (B,)
-
-        # ── CQL random penalty ───────────────────────────────────────────────
         Q_random = None
         if self.config.cql_alpha > 0:
             random_acts = torch.rand(
                 B, self.config.cql_n_random, self.act_dim, device=self.device
             ) * 2 - 1  # uniform in [-1, 1]
+            # Concatenate: (B, 1+cql_n_random, act)
+            all_acts = torch.cat([query_act_expanded, random_acts], dim=1)
 
             if self.config.shallow_value:
-                Q_random = self.evaluate_shallow(h1, random_acts)
+                _, _, _, h1 = self.propose(context_X, context_y, query_obs)
+                Q_all    = self.evaluate_shallow(h1, all_acts)
             else:
-                Q_random = self.evaluate(
-                    context_X, context_y, query_obs, random_acts
-                )
+                Q_all = self.evaluate(context_X, context_y, query_obs, all_acts)
+
+            Q_dataset = Q_all[:, 0]                                 # (B,)
+            Q_random  = Q_all[:, 1:]                                # (B, cql_n_random)
+        else:
+            if self.config.shallow_value:
+                _, _, _, h1 = self.propose(context_X, context_y, query_obs)
+                Q_dataset = self.evaluate_shallow(h1, query_act_expanded)[:, 0]
+            else:
+                Q_dataset = self.evaluate(
+                    context_X, context_y, query_obs, query_act_expanded
+                )[:, 0]                                              # (B,)
 
         # ── Loss ─────────────────────────────────────────────────────────────
         td_loss, info = self.td_loss_fn.compute(Q_dataset, td_target, Q_random)

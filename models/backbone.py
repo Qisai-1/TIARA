@@ -118,6 +118,16 @@ class _TabPFNEncoder(nn.Module):
         for param in modules["decoder_dict.standard.2"].parameters():
             param.requires_grad = False
 
+        # Cache the hook target and register once — avoids named_modules() + hook
+        # register/remove on every forward pass (was the primary training bottleneck).
+        self._captured: dict = {}
+        self._hook_handle = modules["decoder_dict.standard.0"].register_forward_hook(
+            self._capture_hook
+        )
+
+    def _capture_hook(self, module, args, output):
+        self._captured["h"] = output
+
     def forward(
         self,
         context_X: torch.Tensor,   # (B, L, feat_dim)
@@ -134,12 +144,8 @@ class _TabPFNEncoder(nn.Module):
         """
         B, L, F = context_X.shape
         _, Q, _ = query_X.shape
-        device   = context_X.device
 
         # ── Build batched input ───────────────────────────────────────────────
-        # Concatenate context + query along sequence (row) dimension
-        # context_X: (B, L, F) → permute → (L, B, F)
-        # query_X:   (B, Q, F) → permute → (Q, B, F)
         ctx_perm = context_X.permute(1, 0, 2)   # (L, B, F)
         qry_perm = query_X.permute(1, 0, 2)     # (Q, B, F)
 
@@ -148,28 +154,17 @@ class _TabPFNEncoder(nn.Module):
         # Labels: (L, B) — context only, no placeholder for query rows
         y_in = context_y.permute(1, 0)                  # (L, B)
 
-        # ── Hook to capture pre-decoder hidden state ──────────────────────────
-        captured = {}
+        # ── Run backbone (hook populates self._captured) ──────────────────────
+        self._captured.clear()
+        self.model(
+            X_in,
+            y_in,
+            only_return_standard_out=True,
+            categorical_inds=[[] for _ in range(B)],   # one list per batch item
+            save_peak_memory_factor=None,
+        )
 
-        def post_hook(module, args, output):
-            # output shape: (Q, B, 384)
-            captured["h"] = output
-
-        hook_mod = dict(self.model.named_modules())["decoder_dict.standard.0"]
-        handle   = hook_mod.register_forward_hook(post_hook)
-
-        try:
-            self.model(
-                X_in,
-                y_in,
-                only_return_standard_out=True,
-                categorical_inds=[[] for _ in range(B)],   # one list per batch item
-                save_peak_memory_factor=None,
-            )
-        finally:
-            handle.remove()
-
-        h = captured.get("h")
+        h = self._captured.get("h")
         if h is None:
             raise RuntimeError(
                 "Post-hook on decoder_dict.standard.0 did not capture output. "

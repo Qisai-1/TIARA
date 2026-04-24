@@ -61,8 +61,10 @@ def parse_args():
 
     # ── Mode ──────────────────────────────────────────────────────────────────
     parser.add_argument("--phase", type=str, default="pretrain",
-                        choices=["pretrain", "eval"],
-                        help="pretrain = multi-env pretraining | eval = evaluate checkpoint")
+                        choices=["pretrain", "finetune", "eval"],
+                        help="pretrain = frozen-backbone multi-env pretraining | "
+                             "finetune = unfrozen fine-tuning warm-started from frozen checkpoint | "
+                             "eval = evaluate checkpoint")
 
     # ── Multi-env settings (default mode) ─────────────────────────────────────
     parser.add_argument("--envs", type=str, default="all",
@@ -76,6 +78,11 @@ def parse_args():
     parser.add_argument("--eval_env", type=str, default="hopper-medium-v2",
                         help="Environment to evaluate on")
     parser.add_argument("--checkpoint", type=str, default=None)
+
+    # ── Fine-tuning warm-start ────────────────────────────────────────────────
+    parser.add_argument("--warmstart", type=str, default=None,
+                        help="Path to frozen-backbone checkpoint to warm-start finetune phase. "
+                             "Loads proposal/value head weights; backbone starts from TabPFN pretrained.")
 
     # ── ICL ───────────────────────────────────────────────────────────────────
     parser.add_argument("--context_len",  type=int, default=config.context_len)
@@ -109,6 +116,12 @@ def parse_args():
     parser.add_argument("--seed",      type=int, default=42)
 
     args = parser.parse_args()
+
+    # finetune always runs unfrozen — override regardless of --freeze_backbone flag
+    if args.phase == "finetune":
+        args.freeze_backbone = False
+        if not args.warmstart:
+            raise ValueError("--warmstart <frozen_checkpoint.pt> is required for --phase finetune")
 
     # Apply to config
     config.phase           = args.phase
@@ -146,9 +159,9 @@ def set_seed(seed: int):
 
 
 def make_run_name(config, args, multi_env: bool) -> str:
-    mode = "multi_env" if multi_env else getattr(args, "single_env", "unknown")
+    prefix = "finetune" if config.phase == "finetune" else ("multi_env" if multi_env else getattr(args, "single_env", "unknown"))
     return (
-        f"{mode}_"
+        f"{prefix}_"
         f"ctx{config.context_len}_"
         f"K{config.n_candidates}_"
         f"{config.proposal_type}_"
@@ -257,10 +270,77 @@ def main():
 
         print(f"\n[Main] Pretraining complete.")
         print(f"[Main] Checkpoint saved at: {best_ckpt}")
-        print(f"\n[Main] Next step — evaluate on each environment:")
-        print(f"  python tabrl/train.py --phase eval \\")
-        print(f"      --checkpoint {best_ckpt} \\")
-        print(f"      --eval_env hopper-medium-v2")
+        print(f"\n[Main] Next step — fine-tune with unfrozen backbone:")
+        print(f"  python TIARA/train.py --phase finetune \\")
+        print(f"      --warmstart {best_ckpt} \\")
+        print(f"      --head_lr 1e-4 --backbone_lr 1e-6 --pretrain_steps 300000")
+        print(f"\n[Main] Or evaluate directly:")
+        print(f"  python TIARA/train.py --phase eval \\")
+        print(f"      --checkpoint {best_ckpt} --eval_env hopper-medium-v2")
+
+        logger.close()
+
+    # ── PHASE: FINETUNE ───────────────────────────────────────────────────────
+    # Same as pretrain but: backbone is unfrozen, heads are warm-started from
+    # a frozen-backbone checkpoint. The backbone itself starts from TabPFN
+    # pretrained weights (backbone_state=None in frozen ckpt → kept as-is).
+    elif config.phase == "finetune":
+
+        multi_env = (args.single_env is None)
+        run_name  = make_run_name(config, args, multi_env)
+        save_dir  = os.path.join(config.save_dir, run_name)
+        os.makedirs(save_dir, exist_ok=True)
+        logger    = Logger(save_dir, config, use_wandb=config.use_wandb, run_name=run_name)
+
+        print(f"[Main] Phase: FINETUNE (unfrozen backbone)")
+        print(f"[Main] Warm-starting heads from: {args.warmstart}\n")
+
+        if multi_env:
+            minari_ids = ALL_PRETRAIN_ENVS if args.envs == "all" \
+                else [e.strip() for e in args.envs.split(",")]
+            dataloader, normalizers, env_names, max_obs_dim, max_act_dim = \
+                build_multi_env_dataloader(
+                    minari_ids  = minari_ids,
+                    context_len = config.context_len,
+                    batch_size  = config.batch_size,
+                    num_workers = 4,
+                )
+            agent = TabRLAgent(config, obs_dim=max_obs_dim, act_dim=max_act_dim)
+        else:
+            minari_id = config.D4RL_TO_MINARI.get(args.single_env)
+            if minari_id is None:
+                raise ValueError(f"Unknown env: {args.single_env}")
+            data = load_d4rl_dataset(minari_id)
+            normalizers_dict = build_normalizers(data)
+            RunningNormalizer = importlib.import_module(f"{_pkg}.utils.normalizer").RunningNormalizer
+            obs_norm = normalizers_dict["obs"]
+            act_norm = normalizers_dict["act"]
+            rew_norm = normalizers_dict["rew"]
+            data_norm = {
+                "observations":      obs_norm.normalize(data["observations"]),
+                "actions":           act_norm.normalize(data["actions"]),
+                "rewards":           rew_norm.normalize(data["rewards"].reshape(-1,1)).reshape(-1),
+                "next_observations": obs_norm.normalize(data["next_observations"]),
+                "terminals":         data["terminals"],
+            }
+            obs_dim = data["observations"].shape[1]
+            act_dim = data["actions"].shape[1]
+            dataloader = make_pretrain_dataloader(data_norm, config, num_workers=4)
+            agent = TabRLAgent(config, obs_dim=obs_dim, act_dim=act_dim)
+
+        # Load heads from frozen checkpoint; backbone stays at TabPFN pretrained weights
+        agent.load(args.warmstart)
+
+        total_params = sum(p.numel() for p in agent.parameters() if p.requires_grad)
+        print(f"[Main] Trainable parameters: {total_params:,}")
+
+        best_ckpt = pretrain(agent, dataloader, config, logger, save_dir)
+
+        print(f"\n[Main] Fine-tuning complete.")
+        print(f"[Main] Checkpoint saved at: {best_ckpt}")
+        print(f"\n[Main] Next step — evaluate:")
+        print(f"  python TIARA/train.py --phase eval \\")
+        print(f"      --checkpoint {best_ckpt} --eval_env hopper-medium-v2")
 
         logger.close()
 

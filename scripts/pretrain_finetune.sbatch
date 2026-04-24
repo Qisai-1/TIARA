@@ -21,17 +21,36 @@
 
 TIARA=/work/mech-ai-scratch/supersai/TIARA
 cd $TIARA
+mkdir -p logs
 
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate dqn
 
-
 source /work/mech-ai-scratch/supersai/TIARA/activate_tabrl.sh
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
+# ── Warm-start from frozen-backbone checkpoint ────────────────────────────────
+# Set this to the pretrain_best.pt produced by pretrain_frozen.sbatch
+FROZEN_CKPT=$TIARA/frozen_4gpu_h200/pretrain_best.pt
+
+if [ ! -f "$FROZEN_CKPT" ]; then
+    echo "ERROR: frozen checkpoint not found at $FROZEN_CKPT"
+    echo "Run pretrain_frozen.sbatch first, then update FROZEN_CKPT above."
+    exit 1
+fi
+
+echo "Frozen checkpoint: $FROZEN_CKPT"
+echo ""
 
 # Confirm GPUs are visible before training starts
 echo "GPUs available:"
-nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader
+echo ""
+
+# ── Fine-tuning: backbone unfrozen, heads warm-started from frozen run ─────────
+# Backbone LR is very small (1e-6) to avoid destroying pretrained representations.
+# Head LR is reduced (1e-4) since heads are already partially trained.
+# Batch size reduced (32) to fit backbone gradients on GPU.
 
 torchrun \
     --standalone \
@@ -40,8 +59,9 @@ torchrun \
     train_ddp.py \
     --phase pretrain \
     --no_freeze_backbone \
-    --context_len 64 \
-    --n_candidates 16 \
+    --warmstart $FROZEN_CKPT \
+    --context_len 32 \
+    --n_candidates 4 \
     --pretrain_steps 300000 \
     --batch_size 32 \
     --head_lr 1e-4 \
@@ -52,5 +72,8 @@ torchrun \
     --seed 42 \
     --save_dir $TIARA/runs/finetune_4gpu_h200
 
-echo "End time: $(date)"
-echo "Job complete."
+echo ""
+echo "=========================================="
+echo "  Job complete:  $(date)"
+echo "  Checkpoint at: $TIARA/runs/finetune_4gpu_h200/"
+echo "=========================================="

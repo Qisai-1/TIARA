@@ -114,9 +114,12 @@ def parse_args():
     parser.add_argument("--use_wandb",      action="store_true")
     parser.add_argument("--seed",           type=int,   default=42)
     parser.add_argument("--resume",         type=str,   default=None,
-                        help="Path to checkpoint to resume from")
+                        help="Path to checkpoint to resume an interrupted run (same config)")
     parser.add_argument("--resume_step",    type=int,   default=0,
                         help="Step to resume from")
+    parser.add_argument("--warmstart",      type=str,   default=None,
+                        help="Path to frozen-backbone checkpoint to warm-start fine-tuning. "
+                             "Loads proposal/value head weights; backbone keeps TabPFN pretrained weights.")
 
     args = parser.parse_args()
 
@@ -137,6 +140,7 @@ def parse_args():
     config.seed            = args.seed
     config.resume          = args.resume
     config.resume_step     = args.resume_step
+    config.warmstart       = args.warmstart
     config.device          = "cuda"
 
     return config, args
@@ -197,11 +201,12 @@ def build_ddp_dataloader(
 
     dataloader = DataLoader(
         dataset,
-        batch_size=config.batch_size,     # per-GPU batch size
-        sampler=sampler,
-        num_workers=4,
-        pin_memory=True,
-        drop_last=True,
+        batch_size         = config.batch_size,   # per-GPU batch size
+        sampler            = sampler,
+        num_workers        = 4,
+        pin_memory         = True,
+        drop_last          = True,
+        persistent_workers = True,
     )
 
     if rank == 0:
@@ -309,12 +314,19 @@ def train_ddp(config, args):
     t0        = time.time()
     running   = {}
 
-    # Resume from checkpoint if specified
+    # Warm-start heads from a frozen-backbone checkpoint (frozen → finetune transition)
     start_step = 1
-    if hasattr(config, 'resume') and config.resume and os.path.exists(config.resume):
+    warmstart = getattr(config, 'warmstart', None)
+    if warmstart and os.path.exists(warmstart):
+        if main:
+            print(f"[DDP] Warm-starting from frozen checkpoint: {warmstart}")
+            print(f"[DDP] Heads loaded; backbone keeps TabPFN pretrained weights.")
+        raw_agent.load(warmstart)
+
+    # Resume an interrupted run (same config — overwrites warmstart if both given)
+    elif hasattr(config, 'resume') and config.resume and os.path.exists(config.resume):
         if main:
             print(f"[DDP] Resuming from: {config.resume}")
-        map_loc = f"cuda:{local_rank}"
         raw_agent.load(config.resume)
         start_step = getattr(config, 'resume_step', 0) + 1
         if main:

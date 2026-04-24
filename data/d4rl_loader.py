@@ -369,13 +369,15 @@ def build_multi_env_dataloader(
     multi_dataset = MultiEnvDataset(env_datasets, env_names)
 
     # Step 5: DataLoader
+    n_workers  = min(num_workers, os.cpu_count() or 1)
     dataloader = DataLoader(
         multi_dataset,
-        batch_size  = batch_size,
-        shuffle     = True,
-        num_workers = min(num_workers, os.cpu_count() or 1),
-        pin_memory  = True,
-        drop_last   = True,
+        batch_size         = batch_size,
+        shuffle            = True,
+        num_workers        = n_workers,
+        pin_memory         = True,
+        drop_last          = True,
+        persistent_workers = n_workers > 0,
     )
 
     print(f"\n[MultiEnv] DataLoader ready — {len(dataloader):,} batches per epoch\n")
@@ -403,6 +405,7 @@ class ICLTransitionDataset(Dataset):
         self.terminals = data["terminals"]
         self.context_len = context_len
         self.valid_idx = np.arange(context_len, len(obs))
+        self.rtg = ICLEnvDataset._compute_rtg(data["rewards"], data["terminals"])
 
     def __len__(self): return len(self.valid_idx)
 
