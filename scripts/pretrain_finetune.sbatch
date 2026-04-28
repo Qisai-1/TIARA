@@ -31,7 +31,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # ── Warm-start from frozen-backbone checkpoint ────────────────────────────────
 # Set this to the pretrain_best.pt produced by pretrain_frozen.sbatch
-FROZEN_CKPT=$TIARA/frozen_4gpu_h200/pretrain_best.pt
+FROZEN_CKPT=$TIARA/frozen_4gpu_h200/ddp4gpu_ctx32_K4_frozen_seed42/pretrain_best.pt
 
 if [ ! -f "$FROZEN_CKPT" ]; then
     echo "ERROR: frozen checkpoint not found at $FROZEN_CKPT"
@@ -65,8 +65,9 @@ torchrun \
     --pretrain_steps 300000 \
     --batch_size 32 \
     --head_lr 1e-4 \
-    --backbone_lr 1e-6 \
-    --cql_alpha 0.1 \
+    --backbone_lr 1e-7 \
+    --td_weight 0.001 \
+    --cql_alpha 0.0 \
     --cql_n_random 3 \
     --use_wandb \
     --seed 42 \
