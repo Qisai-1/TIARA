@@ -101,6 +101,8 @@ def parse_args():
     parser.add_argument("--proposal_type",  type=str, default=config.proposal_type)
     parser.add_argument("--shallow_value",  action="store_true")
     parser.add_argument("--cql_alpha",      type=float, default=config.cql_alpha)
+    parser.add_argument("--td_weight",      type=float, default=0.01,
+                        help="TD loss weight vs BC (default 0.01)")
     parser.add_argument("--cql_n_random",   type=int,   default=config.cql_n_random,
                         help="Number of random actions for CQL penalty (default 3, set 0 to disable)")
     parser.add_argument("--freeze_backbone",    action="store_true", default=True)
@@ -129,6 +131,7 @@ def parse_args():
     config.proposal_type   = args.proposal_type
     config.shallow_value   = args.shallow_value
     config.cql_alpha       = args.cql_alpha
+    config.td_weight       = args.td_weight
     config.cql_n_random    = args.cql_n_random
     config.freeze_backbone = args.freeze_backbone
     config.backbone_lr     = args.backbone_lr
