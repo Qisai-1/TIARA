@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --time=96:00:00                 # walltime limit (HH:MM:SS)
 #SBATCH --nodes=1                       # number of nodes
-#SBATCH --gres=gpu:a100:4              # 4x A100 80GB GPUs
+#SBATCH --gres=gpu:l40s:4              # 4x A100 80GB GPUs
 #SBATCH --cpus-per-task=4              # 4 cores per task = 16 cores total
 #SBATCH --ntasks=4                      # 1 task per GPU, 4 GPUs total
-#SBATCH --mem=180G                      # maximum memory per node
+#SBATCH --mem=80GB                      # maximum memory per node
 #SBATCH --job-name="tabrl_finetune"    # job name
 #SBATCH --account=mech-ai              # Slurm account to use for the job
 #SBATCH --mail-user=supersai@iastate.edu  # email address
@@ -28,6 +28,8 @@ conda activate dqn
 
 source /work/mech-ai-scratch/supersai/TIARA/activate_tabrl.sh
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+export XDG_CACHE_HOME=/work/mech-ai-scratch/supersai/TIARA/tabpfn_cache
+export TABPFN_CACHE_DIR=/work/mech-ai-scratch/supersai/TIARA/tabpfn_cache
 
 # ── Warm-start from frozen-backbone checkpoint ────────────────────────────────
 # Set this to the pretrain_best.pt produced by pretrain_frozen.sbatch

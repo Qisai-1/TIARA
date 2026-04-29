@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=4
-#SBATCH --gres=gpu:h200:4
+#SBATCH --gres=gpu:a40:4
 #SBATCH --mem=120G
 #SBATCH --job-name="tabrl_frozen_v2"
 #SBATCH --account=mech-ai
@@ -22,6 +22,8 @@ conda activate dqn
 source $TIARA/activate_tabrl.sh
 
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+export XDG_CACHE_HOME=/work/mech-ai-scratch/supersai/TIARA/tabpfn_cache
+export TABPFN_CACHE_DIR=/work/mech-ai-scratch/supersai/TIARA/tabpfn_cache
 
 nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader
 
