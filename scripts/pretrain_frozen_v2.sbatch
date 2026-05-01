@@ -49,6 +49,6 @@ torchrun \
     --td_weight 0.001 \
     --use_wandb \
     --seed 42 \
-    --save_dir $TIARA/frozen_4gpu_h200_v2
+    --save_dir $TIARA/runs/frozen_v2
 
 echo "End time: $(date)"

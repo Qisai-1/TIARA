@@ -61,7 +61,7 @@ torchrun \
     --cql_n_random 3 \
     --use_wandb \
     --seed 42 \
-    --save_dir $TIARA/frozen_4gpu_h200
+    --save_dir $TIARA/runs/frozen_v1
 
 
 echo ""
